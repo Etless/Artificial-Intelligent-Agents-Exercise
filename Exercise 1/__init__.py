@@ -74,7 +74,7 @@ plt.plot(path_np[:, 0], path_np[:, 1], color="blue", linewidth=3, marker="o", ma
 plt.show()"""
 
 ### ### GRID MAP ### ###
-GRID = np.array([
+GRID = [
        [1, 1, 2, 2, 1, 1,],
        [1, 1, 1, 1, 1, 1,],
        [1, 1, 1, 1, 1, 1,],
@@ -84,12 +84,12 @@ GRID = np.array([
        [1, 2,10,10, 1, 1,],
        [1, 1, 1, 1, 1, 1,],
        [1,10, 1, 1, 1, 1,]
-])
+]
 
 start = (1, 0)
 goal  = (4, 7)
 
-path = a_star.test(GRID, start, goal, algorithm=a_star.Diagonal, iterations=1000000)
+path = a_star.ttest(GRID, start, goal, algorithm=a_star.Manhattan, iterations=1000000)
 
 # Adds the correct colors to the correct values
 cmap = mpl.colors.ListedColormap(["white", "green", "red"])
@@ -98,17 +98,23 @@ norm = mpl.colors.BoundaryNorm(bounds, cmap.N, extend='both')
 
 fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
 # Plot image of grid
-ax.imshow(GRID, cmap=cmap, norm=norm, interpolation="none", aspect="equal")
+ax.imshow(GRID, cmap=cmap, norm=norm, interpolation="none", aspect="equal", zorder=1)
 
 # Adds minor grid lines inbetween each cell
-ax.set_xticks(np.arange(-0.5, GRID.shape[1], 1), minor=True)
-ax.set_yticks(np.arange(-0.5, GRID.shape[0], 1), minor=True)
+ax.set_xticks(np.arange(-0.5, len(GRID[0]), 1), minor=True)
+ax.set_yticks(np.arange(-0.5, len(GRID), 1), minor=True)
 ax.grid(which="minor")
 ax.tick_params(which="minor", bottom=False, left=False) # Hides the minor tick marks
 
 # Create chosen path
-path_np = np.array(path)
-plt.plot(path_np[:, 0], path_np[:, 1], color="blue", linewidth=3, marker="o", markersize=6)
+if path is not None:
+       path_np = np.array(path)
+       ax.plot(path_np[:, 0], path_np[:, 1], color="blue", linewidth=3, marker="o", markersize=6, zorder=2)
+
+ax.scatter(start[0], start[1], c="cyan", s=120, edgecolors="cyan", label="Start", zorder=3)
+ax.scatter(goal[0], goal[1], c="orange", s=120, edgecolors="orange", label="Goal", zorder=3)
+
+ax.legend()
 
 plt.show()
 

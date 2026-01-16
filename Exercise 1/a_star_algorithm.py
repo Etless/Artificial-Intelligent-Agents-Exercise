@@ -3,6 +3,7 @@
 import heapq
 import math
 import warnings
+from dataclasses import dataclass
 
 import numpy as np
 
@@ -163,13 +164,13 @@ def test(grid, src, dest, algorithm=Manhattan, iterations=0):
     # The heap containing all "possible" moves. heapq is used when
     # writing to quickly sort it depending on the cost
     open_list = []
-    heapq.heappush(open_list, (0.0, src, src))  # Add src (pos, dest, parent)
+    heapq.heappush(open_list, (0.0, 0.0, src, src))  # Add src (cost, path_cost, pos, parent)
 
     # List of visited cells/positions. Used to remove overlapping
     closed_list = np.zeros((height, width), dtype=bool)
 
     # List of cost. Only shows for visited cells positions
-    cost_list = np.empty((height, width), dtype=float)
+    cost_list = np.empty((height, width, 2), dtype=float)
 
     # List of initialized neighbor. Shows what cell activated it.
     # Used to generate path at the end
@@ -188,14 +189,14 @@ def test(grid, src, dest, algorithm=Manhattan, iterations=0):
             return None
 
         # Get the lowest cost cell
-        cost, pos, parent = heapq.heappop(open_list)
-        print(cost)
+        cost, path, pos, parent = heapq.heappop(open_list)
+
         # Checks if cell is already closed
         if closed_list[pos]:
             continue
 
         closed_list[pos] = True  # Mark cell as visited
-        cost_list[pos] = cost # Mark cost of cell
+        cost_list[pos] = (cost, path) # Mark cost of cell
         path_list[pos] = parent # Mark parent at cell
 
         # Check all valid neighbors to the cell
@@ -207,8 +208,9 @@ def test(grid, src, dest, algorithm=Manhattan, iterations=0):
                 continue
 
             # Calculate the total cost of the cell
-            _cost = algorithm.distance(new_pos, dest) + grid[new_pos] + cost
-            heapq.heappush(open_list, (_cost, new_pos, pos))  # Add new positon to heap
+            _cost = algorithm.distance(new_pos, dest) + grid[new_pos]
+            _path = path + algorithm.distance(new_pos, pos) + path + cost
+            heapq.heappush(open_list, (_cost + _path, _path, new_pos, pos))  # Add new positon to heap
 
             # Check if cell is at destination
             if new_pos == dest:
@@ -227,6 +229,99 @@ def test(grid, src, dest, algorithm=Manhattan, iterations=0):
                     path.append((int(path_list[path[-1][0], path[-1][1], 0]), int(path_list[path[-1][0], path[-1][1], 1])))
                 #path.reverse()  # Reverse src -> dest
                 path = [(x, y) for y, x in reversed(path)] # Reverse src -> dest and (row, col) -> (x, y)
+
+                return path
+
+
+@dataclass(order=True)
+class Node:
+    # Position
+    pos: tuple[int, int]
+
+    # Cost
+    g: float
+    h: float
+
+    # Pointer leading back to source
+    parent: "Node | None" = None
+
+def ttest(grid, src, dest, algorithm=Manhattan, iterations=0):
+    if type(grid) != list or grid is None or len(grid) == 0 or len(grid[0]) == 0:
+        raise Exception("Grid needs to be an 2 dimensional list!")
+
+    height, width = len(grid), len(grid[0])
+    iterations = width * height if iterations == 0 else iterations
+
+    # Makes sure that the grid map is valid
+    if not all(len(row) == width for row in grid):
+        raise Exception("Invalid grid size! Grid must be a rectangle!")
+
+    # Checks if src & dest are valid
+    if 0 < src[0] >= width or 0 < src[1] >= height:
+        raise Exception("Invalid source position! Source must be within grid!")
+    if 0 < dest[0] >= width or 0 < dest[1] >= height:
+        raise Exception("Invalid destination position! Destination must be within grid!")
+
+    # Make sure that source does not start in destination (not an error)
+    if src == dest:
+        return src
+
+    node = Node(src, grid[src[1]][src[0]], algorithm.distance(src, dest), None) # Source node
+
+    open_list = []
+    heapq.heappush(open_list, (node.g + node.h, node))  # Add src
+
+    # Add closed list that marks points in grid that
+    # have been assigned the optimal value
+    closed_list = [[None for _ in range(width)] for _ in range(height)]
+
+    while True:
+        # Breaks the loop if iteration limit is exceeded
+        if iterations == 0:
+            warnings.warn("Ran out of iterations! Did not find a solution!")
+            return None
+        iterations -= 1
+
+        # Breaks the loop if heap is empty
+        if len(open_list) == 0:
+            warnings.warn("No solution found!")
+            return None
+
+        # Get the lowest cost cell
+        _, node = heapq.heappop(open_list)
+
+        # Checks if cell is already closed
+        if closed_list[node.pos[1]][node.pos[0]] is not None:
+            continue
+
+        closed_list[node.pos[1]][node.pos[0]] = node
+
+        # Check all valid neighbors to the cell
+        for direction in algorithm.directions:
+            _pos = (node.pos[0] + direction[0], node.pos[1] + direction[1])
+
+            # Checks if cell is valid
+            if 0 < _pos[0] >= width or 0 < _pos[1] >= height:
+                continue
+
+            # Cost
+            g = algorithm.distance(_pos, node.pos) + grid[_pos[1]][_pos[0]] + node.g
+            h = algorithm.distance(_pos, dest)
+
+            # Add to heap
+            _node = Node(_pos, g, h, node)
+            heapq.heappush(open_list, (g + h, _node))  # Add new positon to heap
+
+            if _pos == dest:
+
+                # Make list with path from dest -> src (temp)
+                path = []
+                next_node = _node
+                while next_node is not None:
+                    path.append(next_node.pos)
+                    next_node = next_node.parent
+                path.reverse()  # Reverse src -> dest
+                #path = [(x, y) for y, x in reversed(path)]  # Reverse src -> dest and (row, col) -> (x, y)
 
                 return path
 
