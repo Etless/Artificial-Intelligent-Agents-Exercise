@@ -1,9 +1,7 @@
-# Used https://www.geeksforgeeks.org/dsa/a-search-algorithm/ for
-# reference/information gathering
-import heapq
 import math
 import warnings
 from dataclasses import dataclass
+
 
 # Different Heuristics functions
 
@@ -45,6 +43,8 @@ class Euclidean:
 
     directions = ((-1, 0), (-1, 1), (0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1))
 
+
+
 @dataclass(order=True)
 class Node:
     # Position
@@ -52,7 +52,7 @@ class Node:
 
     # Cost
     g: float
-    h: float
+    # h: float
 
     # Pointer leading back to source
     parent: "Node | None" = None
@@ -78,29 +78,18 @@ def search(grid, src, dest, algorithm=Manhattan, iterations=0):
     if src == dest:
         return src, 0
 
-    node = Node(src, 0, 0, None) # Source node
+    node = Node(src, 0, None) # Source node
 
-    open_list = []
-    heapq.heappush(open_list, (node.g + node.h, node))  # Add src
-
-    # Add closed list that marks points in grid that
-    # have been assigned the optimal value
-    closed_list = [[None for _ in range(width)] for _ in range(height)]
+    # Add list that marks points in grid that
+    node_list: list[list[Node | None]] = [[None for _ in range(width)] for _ in range(height)]
 
     while True:
-        # Breaks the loop if heap is empty
-        if len(open_list) == 0:
+        # Breaks the loop if node is None
+        if node is None:
             warnings.warn("No solution found!")
             return None, -1
 
-        # Get the lowest cost cell
-        _, node = heapq.heappop(open_list)
-
-        # Checks if cell is already closed
-        if closed_list[node.pos[1]][node.pos[0]] is not None:
-            continue
-
-        closed_list[node.pos[1]][node.pos[0]] = node
+        node_list[node.pos[1]][node.pos[0]] = node
 
         # Breaks the loop if iteration limit is exceeded
         if iterations == 0:
@@ -108,35 +97,40 @@ def search(grid, src, dest, algorithm=Manhattan, iterations=0):
             return None, -1
         iterations -= 1
 
+        _node = None
+
         # Check all valid neighbors to the cell
         for direction in algorithm.directions:
             _pos = (node.pos[0] + direction[0], node.pos[1] + direction[1])
 
             # Checks if cell is valid
-            if not (0 <= _pos[0] < width and 0 < _pos[1] < height):
+            if not (0 <= _pos[0] < width and 0 <= _pos[1] < height):
                 continue
 
-            # Cost
+            # Check if node has not been checked already
+            if node_list[_pos[1]][_pos[0]] is not None:
+                continue
+
+            # Ignore all other directions if a valid direction
+            # is found
             g = grid[_pos[1]][_pos[0]] + node.g
-            h = algorithm.distance(_pos, dest)
+            _node = Node(_pos, g, node)
+            break
 
-            # Add to heap
-            _node = Node(_pos, g, h, node)
-            heapq.heappush(open_list, (g + h, _node))  # Add new positon to heap
+        # If no direction was valid then backtrack
+        node = node.parent if _node is None else _node
 
-            if _pos == dest:
+        if node.pos == dest:
 
-                # Make list with path from dest -> src (temp)
-                path = []
-                next_node = _node
-                while next_node is not None:
-                    path.append(next_node.pos)
-                    next_node = next_node.parent
-                path.reverse()  # Reverse src -> dest
-                #path = [(x, y) for y, x in reversed(path)]  # Reverse src -> dest and (row, col) -> (x, y)
+            # Make list with path from dest -> src (temp)
+            path = []
+            next_node = _node
+            while next_node is not None:
+                path.append(next_node.pos)
+                next_node = next_node.parent
+            path.reverse()  # Reverse src -> dest
+            # path = [(x, y) for y, x in reversed(path)]  # Reverse src -> dest and (row, col) -> (x, y)
 
-                return path, g
-
-
+            return path, node.g
 
 
