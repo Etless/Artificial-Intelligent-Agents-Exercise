@@ -2,11 +2,13 @@ import time
 import robot_dog as robot
 
 
-robot = robot.RobotDog()
+# Hunger and bladder percentage can be altered when creating dog
+robot1 = robot.RobotDog()
 
 print("Robot Dog is starting")
-robot.start_robot()
+robot1.start_robot()
 time.sleep(120)
 
 print("Robot Dog is stopping")
-robot.stop_robot()
+robot1.stop_robot()
+
