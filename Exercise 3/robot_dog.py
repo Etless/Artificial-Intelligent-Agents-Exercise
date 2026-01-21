@@ -62,7 +62,7 @@ class RobotDog(threading.Thread):
 
             elif not self.move == (0, 0):
                 self.pos = (self.pos[0] + self.move[0], self.pos[1] + self.move[1])
-                print("I'm roaming to ", self.pos)
+                print("I'm roaming to", self.pos)
                 time.sleep(1)  # Time it takes to move
                 self.move = (0, 0)
 
