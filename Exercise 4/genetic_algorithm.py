@@ -19,9 +19,9 @@ def iterate(population_size, generations, min_population, max_population, f, mut
         evaluated = [(x, f(x)) for x in population]
 
         # Sort the list by its fitness f(x)
-        evaluated.sort(key=lambda x: x[1], reverse=True)
+        evaluated.sort(key=lambda x: x[1], reverse=True) # Reverse for 0 = max
 
-        best_history.append(evaluated[0][1]) # Save best y-value
+        best_history.append(evaluated[0][0]) # Save best x-value
 
         # Get the top 50%
         parents = evaluated[:population_size // 2]

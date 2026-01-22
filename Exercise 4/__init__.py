@@ -18,9 +18,32 @@ max_pop = 30        # ^^^
 mutation = 0.5      # Prob
 crossover = 0.25    # ^^^
 
+# Perform the genetic algorithm
 history, population = ga.iterate(size, generations, min_pop, max_pop, f, mutation, crossover)
 
-# Final best
-best_x = max(population, key=lambda x: f(x))
-print("Best solution found:")
-print("x =", best_x, "f(x) =", f(best_x))
+best_history = max(history, key=lambda x: f(x))
+best_final = max(population, key=lambda x: f(x))
+
+print(f"Best History: ({best_history:1.4f}, {f(best_history):1.4f}) :: Best Final: ({best_final:1.4f}, {f(best_final):1.4f})")
+
+
+
+#vari = abs(best_final - best_history) // 10
+
+min_x = min(min(history), min(population)) - 5
+max_x = max(max(history), max(population)) + 5
+
+# Plot the function and place point of the
+# final and best value
+x_vals = np.linspace(min_x, max_x, 400)
+y_vals = [f(x) for x in x_vals]
+plt.plot(x_vals, y_vals, label="f(x)")
+
+points_x = history
+points_y = [f(x) for x in points_x]
+
+plt.plot(points_x, points_y, 'o')
+
+plt.plot(best_history, label="Best y per generation")
+plt.legend()
+plt.show()
