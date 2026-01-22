@@ -12,7 +12,7 @@ def f(x):
 
 # Data for the genetic algorithm
 size = 50           # Population
-generations = 1000000    # Iterations
+generations = 50    # Iterations
 min_pop = 0         # Range for initial x-values
 max_pop = 30        # ^^^
 mutation = 0.5      # Prob
