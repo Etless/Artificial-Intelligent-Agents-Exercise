@@ -35,16 +35,19 @@ max_x = max(max(history), max(population)) + 5
 
 # Plot the function and place point of the
 # final and best value
+fig, ax = plt.subplots(figsize=(6, 6), dpi=100)
+
 x_vals = np.linspace(min_x, max_x, 400)
 y_vals = [f(x) for x in x_vals]
-plt.plot(x_vals, y_vals, label="f(x)")
+ax.plot(x_vals, y_vals, label="f(x)")
 
 points_x = history
 points_y = [f(x) for x in points_x]
 
-plt.plot(points_x, points_y, 'o', label="Points")
+ax.plot(points_x, points_y, 'o', label="Points")
 
-plt.title(f"Best value = {f(best_history):1.4f}")
+plt.title(f"Best value = {f(best_history):1.4f}\n"
+          f"Final value = {f(best_final):1.4f}\n")
 
 #plt.legend()
 plt.show()
