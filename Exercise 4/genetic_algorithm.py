@@ -37,7 +37,7 @@ def iterate(population_size, generations, min_population, max_population, f, mut
 
             # Mutation (p)
             if random.random() < mutation_prob:
-                child_x += random.uniform(-0.1, 0.1) # Random variation (mutation)
+                child_x += random.uniform(-0.1, 0.1) # Random variation (mutation) limited to  ±0.1
 
             _population.append(child_x)
 
