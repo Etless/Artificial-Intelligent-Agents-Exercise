@@ -42,8 +42,9 @@ plt.plot(x_vals, y_vals, label="f(x)")
 points_x = history
 points_y = [f(x) for x in points_x]
 
-plt.plot(points_x, points_y, 'o')
+plt.plot(points_x, points_y, 'o', label="Points")
 
-plt.plot(best_history, label="Best y per generation")
-plt.legend()
+plt.title(f"Best value = {f(best_history):1.4f}")
+
+#plt.legend()
 plt.show()
