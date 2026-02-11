@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import copy
 
 import k_mean as km
+# Code inspired from https://www.geeksforgeeks.org/machine-learning/k-means-clustering-introduction/
+
 
 # x1 | x2 | Alarm state
 
@@ -24,7 +27,23 @@ array_np = np.array(array)
 # Pick prototype form each state
 x = array_np[:, 0]
 y = array_np[:, 1]
-centroids = [(x[0], y[0]), (x[2], y[2]), (x[23], y[23])] # Pending | Small | Imminent
+centroids = [array[0][:2], array[2][:2], array[23][:2]] # Pending | Small | Imminent
+
+# Cluster containing the closest points
+clusters = {}
+for i, centroid in enumerate(centroids):
+    clusters[i] = {
+        "center": centroid,
+        "points": []
+    }
+
+cluster_history = {}
+
+for k in range(3):
+    km.assign(array, clusters)
+    cluster_history[k] = copy.deepcopy(clusters)
+    km.update(array, clusters)
+
 
 
 
@@ -34,13 +53,29 @@ col = np.char.replace(col, "Small", "green")
 col = np.char.replace(col, "Pending", "blue")
 col = np.char.replace(col, "Imminent", "red")
 
-xPoints = array_np[:, 0]
-yPoints = array_np[:, 1]
+xPoints = array_np[:, 0].astype(float)
+yPoints = array_np[:, 1].astype(float)
 
-for i in range(len(array_np)):
-    plt.plot(xPoints[i], yPoints[i], 'x', c=col[i])
+plt.scatter(xPoints, yPoints, marker='x', c=col)
+
+#plt.scatter(0,1)
+
+for cluster in clusters.values():
+    center = cluster["center"]
+    plt.scatter(center[0], center[1], marker='*', c="black")
+    print(center)
+
+
+for i in cluster_history.values():
+    for j in i.values():
+        center = j["center"]
+        plt.plot(center[0], center[1], '*', c="black")
+
+#for i in range(len(array_np)):
+#    plt.scatter(xPoints[i], yPoints[i], marker='x', c=col[i])
 
 plt.xlabel("X1")
 plt.ylabel("X2")
 plt.title("Array")
+plt.grid(True)
 plt.show()
