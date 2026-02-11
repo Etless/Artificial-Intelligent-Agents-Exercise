@@ -5,6 +5,7 @@ import copy
 import k_mean as km
 # Code inspired from https://www.geeksforgeeks.org/machine-learning/k-means-clustering-introduction/
 
+k = 3
 
 # x1 | x2 | Alarm state
 
@@ -27,7 +28,7 @@ array_np = np.array(array)
 # Pick prototype form each state
 x = array_np[:, 0]
 y = array_np[:, 1]
-centroids = [array[0][:2], array[2][:2], array[23][:2]] # Pending | Small | Imminent
+centroids = [array[0][:2], array[2][:2], array[32][:2]] # Pending | Small | Imminent
 
 # Cluster containing the closest points
 clusters = {}
@@ -39,14 +40,55 @@ for i, centroid in enumerate(centroids):
 
 cluster_history = {}
 
-for k in range(3):
+for i in range(k):
     km.assign(array, clusters)
-    cluster_history[k] = copy.deepcopy(clusters)
+    cluster_history[i] = copy.deepcopy(clusters)
     km.update(array, clusters)
 
+cluster_history[k] = copy.deepcopy(clusters)
+print(len(cluster_history))
 
 
+# Color map to be used to filter/determine
+# the color of each point
+color_map = {
+    "Small": "green",
+    "Pending": "blue",
+    "Imminent": "red"
+}
 
+# Convert points from array to numpy, and make them the
+# correct type (defaults to object)
+X = np.array([p[:2] for p in array], dtype=float)
+labels = np.array([p[2] for p in array], dtype=str)
+
+plt.figure()
+
+# Draw all points on plot
+for label in np.unique(labels):
+    # Create a mask to filter just the correct points
+    mask = labels == label
+    plt.scatter(X[mask, 0], X[mask, 1], c=color_map[label], marker='x', label=label)
+
+cluster_arrays = [[] for _ in range(len(clusters))]
+
+# Plot cluster predictions for each iteration
+for i ,clusters_ in cluster_history.items():
+
+    for j, cluster in clusters_.items():
+        # Simplify cluster to just (x, y) points
+        cluster_arrays[j].append(cluster["center"])
+
+for cluster in cluster_arrays:
+    X = np.array([p[:2] for p in cluster], dtype=float)
+    plt.plot(X[0], X[1], "*:", c="grey")
+    #print(X)
+
+X = np.array([p["center"][:2] for p in clusters.values()], dtype=float)
+print(X)
+plt.scatter(X[0], X[1], "*:", c="orange")
+
+"""
 # Draw plot
 col = array_np[:, 2]
 col = np.char.replace(col, "Small", "green")
@@ -63,8 +105,8 @@ plt.scatter(xPoints, yPoints, marker='x', c=col)
 for cluster in clusters.values():
     center = cluster["center"]
     plt.scatter(center[0], center[1], marker='*', c="black")
-    print(center)
 
+    print(center)
 
 for i in cluster_history.values():
     for j in i.values():
@@ -73,9 +115,11 @@ for i in cluster_history.values():
 
 #for i in range(len(array_np)):
 #    plt.scatter(xPoints[i], yPoints[i], marker='x', c=col[i])
+"""
 
 plt.xlabel("X1")
 plt.ylabel("X2")
 plt.title("Array")
 plt.grid(True)
+plt.legend()
 plt.show()
