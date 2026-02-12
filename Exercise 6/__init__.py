@@ -92,7 +92,8 @@ plt.scatter(X[:,0], X[:,1], marker="*", c="orange", s=150, label="Clusters", zor
 
 # Draw a mesh in the background to show the area of influence for each cluster
 range_xy = (17, 19)
-xx, yy = np.meshgrid(np.linspace(0, range_xy[0], 200), np.linspace(0, range_xy[1], 200))
+num_ = 800
+xx, yy = np.meshgrid(np.linspace(0, range_xy[0], num_), np.linspace(0, range_xy[1], num_))
 grid = np.c_[xx.ravel(), yy.ravel()]
 
 prediction = []
@@ -196,9 +197,14 @@ for label in np.unique(labels): # Only the different states
     mask = labels == label
     plt.scatter(X[mask, 0], X[mask, 1], c=color_map[label], marker='x', label=label, zorder=1)
 
+# Highlight the cores
+X = np.array([(c.x, c.y) for c in cores], dtype=float)
+plt.scatter(X[:,0], X[:,1], marker="*", c="orange", s=120, label="Core", zorder=3)
+
 # Draw a mesh in the background to show the area of influence for each cluster
 range_xy = (17, 19)
-xx, yy = np.meshgrid(np.linspace(0, range_xy[0], 200), np.linspace(0, range_xy[1], 200))
+num_ = 400
+xx, yy = np.meshgrid(np.linspace(0, range_xy[0], num_), np.linspace(0, range_xy[1], num_))
 grid = np.c_[xx.ravel(), yy.ravel()]
 
 prediction = []
