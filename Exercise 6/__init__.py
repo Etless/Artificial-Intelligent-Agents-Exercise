@@ -4,6 +4,7 @@ import copy
 
 import k_mean as km
 import knn
+from sklearn.cluster import DBSCAN
 # Code inspired from https://www.geeksforgeeks.org/machine-learning/k-means-clustering-introduction/
 
 # Iterations
@@ -120,3 +121,35 @@ for i, j in enumerate(centroids):
     chance = knn.chances(j, array, k, offset=1)
     print(
         f"{i}: Point (X:{j[0]:0.2f}, Y:{j[1]:0.2f}), Pending {(chance.get("Pending", 0.0) * 100.0):0.2f}%")
+
+# Show DBScan (Sadly using sklearn)
+print("=== DBScan ===")
+eps = 1.5
+min_pts = 4
+
+X = np.array([(p[0], p[1]) for p in array], dtype=float)
+
+db = DBSCAN(eps=eps, min_samples=min_pts)
+labels = db.fit_predict(X)
+
+core_idx = db.core_sample_indices_          # indices of core points
+core_mask = np.zeros(len(X), dtype=bool)
+core_mask[core_idx] = True
+
+# Report core points
+print(f"DBSCAN parameters: eps={eps}, MinPts(min_samples)={min_pts}")
+print(f"Number of core points: {core_mask.sum()}")
+print("Core points (index -> (x1, x2)):")
+for i in core_idx:
+    print(f"  {i+1:2d} -> ({X[i,0]:.1f}, {X[i,1]:.1f})")  # +1 to match t = 1..33
+
+# Cluster/noise summary
+n_noise = np.sum(labels == -1)
+clusters = sorted(set(labels) - {-1})
+print("\nCluster summary:")
+print(f"Number of clusters (excluding noise): {len(clusters)}")
+print(f"Number of noise points: {n_noise}")
+
+for c in clusters:
+    members = np.where(labels == c)[0]
+    print(f"  Cluster {c}: size={len(members)}")
