@@ -4,6 +4,7 @@ import copy
 
 import k_mean as km
 import knn
+import DBScan
 from sklearn.cluster import DBSCAN
 # Code inspired from https://www.geeksforgeeks.org/machine-learning/k-means-clustering-introduction/
 
@@ -113,7 +114,7 @@ plt.show()
 # Show the Pending chances for each cluster
 print("=== K-mean ===")
 for i, chance in km.chances(array, clusters).items():
-    print(f"{i}: Cluster (X:{clusters[i]["center"][0]:0.2f}, Y:{clusters[i]["center"][1]:0.2f}), Pending {(chance.get("Pending", 0.0)*100.0):0.2f}%")
+    print(f"{i}: Cluster (X:{clusters[i]["center"][0]:0.2f}, Y:{clusters[i]["center"][1]:0.2f}), Small {(chance.get("Small", 0.0)*100.0):0.2f}%, Pending {(chance.get("Pending", 0.0)*100.0):0.2f}%, Imminent {(chance.get("Imminent", 0.0)*100.0):0.2f}%")
 
 # Show the Pending chances for the knn calculation
 print("=== KNN ===")
@@ -122,11 +123,102 @@ for i, j in enumerate(centroids):
     print(
         f"{i}: Point (X:{j[0]:0.2f}, Y:{j[1]:0.2f}), Pending {(chance.get("Pending", 0.0) * 100.0):0.2f}%")
 
-# Show DBScan (Sadly using sklearn)
+# Show DBScan
 print("=== DBScan ===")
 eps = 1.5
 min_pts = 4
 
+points = DBScan.assign(array, eps, min_pts)
+
+# Get all core points
+cores = DBScan.get_cores(points)
+print(f"Number of core points: {len(cores)}")
+print(f"Core points (cluster -> (x1, x2, state):")
+
+# Shows core points
+for core in cores:
+    print(f"   {core.cluster} -> ({core.x}, {core.y}, {core.state})")
+
+# Get unique clusters (with count)
+unique, count = np.unique(np.array([p.cluster for p in points], dtype=int), return_counts=True)
+
+# Shows the size of each cluster
+print(f"Number of noise points: {count[0] if unique[0] == -1 else 0}")
+for i in range(len(unique)):
+    if unique[i] == -1:
+        continue
+
+    print(f"Cluster {unique[i]}: size={count[i]}")
+
+
+# Print the chances in the same style as the other methods
+print("Pending chances:")
+cluster_chance = {}
+for i, j in enumerate(unique):
+    if j == -1:
+        continue
+
+    cluster_chance[i] = {
+        "cluster": j,
+        "states": []
+    }
+
+    for k in points:
+        if k.cluster == j:
+            cluster_chance[i]["states"].append(k.state)
+
+    states_, count = np.unique(np.array(cluster_chance[i]["states"], dtype=str), return_counts=True)
+
+    chances_ = {}
+
+    size = int(np.sum(count))
+    count = count.astype(int).tolist()
+    states_ = states_.astype(str).tolist()
+
+    for k in range(len(states_)):
+        chances_[states_[k]] = count[k] / size
+
+    print(f"Cluster {j}, Pending {(chances_.get("Pending", 0.0) * 100.0):0.2f}%")
+
+
+# Plot the DBScan borders to help visualize it better
+
+# Convert points from array to numpy, and make them the
+# correct type (defaults to object)
+X = np.array([p[:2] for p in array], dtype=float)
+labels = np.array([p[2] for p in array], dtype=str)
+
+plt.figure()
+
+# Draw all points on plot
+for label in np.unique(labels): # Only the different states
+    # Create a mask to filter just the correct points
+    mask = labels == label
+    plt.scatter(X[mask, 0], X[mask, 1], c=color_map[label], marker='x', label=label, zorder=1)
+
+# Draw a mesh in the background to show the area of influence for each cluster
+range_xy = (17, 19)
+xx, yy = np.meshgrid(np.linspace(0, range_xy[0], 200), np.linspace(0, range_xy[1], 200))
+grid = np.c_[xx.ravel(), yy.ravel()]
+
+prediction = []
+for point in grid:
+    i = DBScan.predict(point, cores, eps)
+    prediction.append(i)
+
+Z = np.array(prediction, dtype=int).reshape(xx.shape)
+plt.contourf(xx, yy, Z, alpha=0.2, zorder=0)
+
+# Shows the plot
+plt.xlabel("X1")
+plt.ylabel("X2")
+plt.title("DBScan")
+plt.grid(True)
+plt.legend()
+plt.show()
+
+### This is an import to test if the results are correct
+"""
 X = np.array([(p[0], p[1]) for p in array], dtype=float)
 
 db = DBSCAN(eps=eps, min_samples=min_pts)
@@ -152,4 +244,4 @@ print(f"Number of noise points: {n_noise}")
 
 for c in clusters:
     members = np.where(labels == c)[0]
-    print(f"  Cluster {c}: size={len(members)}")
+    print(f"  Cluster {c}: size={len(members)}")"""
