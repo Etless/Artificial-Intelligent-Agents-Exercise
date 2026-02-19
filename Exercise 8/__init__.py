@@ -12,12 +12,11 @@ import numpy as np
 
 # Step 1
 # Load data from Excel file
-def load_data(path):
-    df = pd.read_excel(EXCEL_PATH)
+def load_data(path, sheet):
+    df = pd.read_excel(EXCEL_PATH, sheet_name=sheet)
 
     # Keep only the value column (assume column name is 'value')
     values = df.iloc[:, 2].values.reshape(-1, 1)
-    print(values)
 
     return values
 
@@ -76,38 +75,97 @@ def print_error(train_Y, test_Y, train_predict, test_predict):
     print("Test RMSE:", test_rmse)
 
 # Step 6
-def plot_results(trainY, testY, train_predict, test_predict):
+def plot_results(trainY, testY, train_predict, test_predict, title="RNN Prediction"):
 
-    plt.figure(figsize=(12,6))
+    # Convert predictions to 1D
+    train_predict = train_predict.flatten()
+    test_predict = test_predict.flatten()
 
-    # Training predictions
-    plt.plot(trainY, label='Train Actual')
-    plt.plot(train_predict, label='Train Prediction')
+    # Create full-length arrays filled with NaN
+    total_length = len(trainY) + len(testY)
 
-    # Shift test predictions for proper visualization
-    offset = len(trainY)
-    test_actual_plot = np.empty(len(trainY) + len(testY))
+    train_actual_plot = np.empty(total_length)
+    train_actual_plot[:] = np.nan
+    train_actual_plot[:len(trainY)] = trainY
+
+    train_predict_plot = np.empty(total_length)
+    train_predict_plot[:] = np.nan
+    train_predict_plot[:len(trainY)] = train_predict
+
+    test_actual_plot = np.empty(total_length)
     test_actual_plot[:] = np.nan
-    test_actual_plot[offset:] = testY
+    test_actual_plot[len(trainY):] = testY
 
-    test_predict_plot = np.empty(len(trainY) + len(testY))
+    test_predict_plot = np.empty(total_length)
     test_predict_plot[:] = np.nan
-    test_predict_plot[offset:] = test_predict.flatten()
+    test_predict_plot[len(trainY):] = test_predict
 
-    plt.plot(test_actual_plot, label='Test Actual')
-    plt.plot(test_predict_plot, label='Test Prediction')
+    # Plot
+    plt.figure(figsize=(14,6))
+    plt.plot(train_actual_plot, label="Train Actual")
+    plt.plot(train_predict_plot, label="Train Prediction")
+    plt.plot(test_actual_plot, label="Test Actual")
+    plt.plot(test_predict_plot, label="Test Prediction")
 
+    plt.title(title)
+    plt.xlabel("Time Steps")
+    plt.ylabel("Scaled Exchange Rate")
     plt.legend()
-    plt.title("RNN Prediction of NOK Exchange Rate")
+    plt.grid(True)
     plt.show()
 
 # Variables used:
 EXCEL_PATH = "C:\\Users\\Askar\\Downloads\\EXR2.xlsx"
+
+time_steps = 12
 SPLIT_PERCENT = 0.8
 
+CURRENCY_SHEET = "BASE_CUR_EUR"
+
+SHEETS = ["BASE_CUR_EUR", "BASE_CUR_GBP", "BASE_CUR_DKK", "BASE_CUR_USD"]
+
+for SHEET in SHEETS:
+
+    print(f"Currency: {SHEET}")
+    # Normalize data
+    data_ = load_data(EXCEL_PATH, SHEET)
+    train_data, test_data, data = get_train_test(data_, SPLIT_PERCENT)
+
+    train_X, train_Y = get_XY(train_data, time_steps)  # Training set
+    test_X, test_Y = get_XY(test_data, time_steps)  # Test set
+
+    model = create_RNN(
+        hidden_units=3,
+        dense_units=1,
+        input_shape=(time_steps, 1),
+        activation=["tanh", "tanh"]
+    )
+
+    model.fit(
+        train_X, train_Y,
+        epochs=20,
+        batch_size=1,
+        verbose=0
+    )
+
+    # Make predictions
+    train_predict = model.predict(train_X)
+    test_predict = model.predict(test_X)
+
+    # Mean square error
+    print_error(train_Y, test_Y, train_predict, test_predict)
+
+
+
+    # Step 6
+    plot_results(train_Y, test_Y, train_predict, test_predict,
+             title=f"RNN Prediction - {SHEET}")
+
+
+"""
 # Step 1 & 2
 # Get normalized data types
-data_ = load_data(EXCEL_PATH)
+data_ = load_data(EXCEL_PATH, CURRENCY_SHEET)
 train_data, test_data, data = get_train_test(data_, SPLIT_PERCENT)
 
 # Step 3
@@ -140,3 +198,4 @@ print_error(train_Y, test_Y, train_predict, test_predict)
 
 # Step 6
 plot_results(train_Y, test_Y, train_predict, test_predict)
+"""
